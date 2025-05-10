@@ -189,16 +189,19 @@ class MarkdownKnowledgeGraph:
             return False
             
         relationship_line = f"- {verbPreposition} [[{targetEntity}]] {context}"
+        found_relationship = False
         
         with open(file_path, 'r') as f:
             lines = f.readlines()
             
         with open(file_path, 'w') as f:
             for line in lines:
-                if line.strip() != relationship_line.strip():
-                    f.write(line)
+                if line.strip() == relationship_line.strip():
+                    found_relationship = True
+                    continue
+                f.write(line)
                     
-        return True
+        return found_relationship
     
     def deleteObservation(self, entity, observation):
         """Delete a specific observation"""
@@ -206,12 +209,15 @@ class MarkdownKnowledgeGraph:
         if not file_path.exists():
             return False
             
+        found_observation = False
         with open(file_path, 'r') as f:
             lines = f.readlines()
             
         with open(file_path, 'w') as f:
             for line in lines:
-                if line.strip() != observation.strip():
-                    f.write(line)
+                if line.strip() == observation.strip():
+                    found_observation = True
+                    continue
+                f.write(line)
                     
-        return True
+        return found_observation

@@ -1,7 +1,7 @@
 import asyncio
 import os
 from pathlib import Path
-from typing import List, Dict, Optional, Any
+from typing import List, Dict, Optional, Any, Mapping
 import sys
 
 from pydantic import BaseModel, Field
@@ -81,74 +81,74 @@ app = FastMCP(
 
 # --- Tool Definitions (Refactored Signatures) ---
 @app.tool(name="create_entity", description="Creates a new entity.")
-async def create_entity_tool(context: Context, request: EntityNameRequest) -> StandardResponse:
+async def create_entity_tool(context: Context, request: EntityNameRequest) -> Dict:
     entity_file = Path(KG_MARKDOWN_BASE_PATH) / f"{request.name}.md"
     if entity_file.exists():
-        return StandardResponse(success=False, message=f"Entity '{request.name}' already exists.")
+        return StandardResponse(success=False, message=f"Entity '{request.name}' already exists.").model_dump()
     success = await kg_async_service.create_entity(name=request.name)
     if success:
-        return StandardResponse(success=True, message=f"Entity '{request.name}' created successfully.")
-    return StandardResponse(success=False, message=f"Failed to create entity '{request.name}'.")
+        return StandardResponse(success=True, message=f"Entity '{request.name}' created successfully.").model_dump()
+    return StandardResponse(success=False, message=f"Failed to create entity '{request.name}'.").model_dump()
 
 @app.tool(name="get_graph", description="Retrieves the entire knowledge graph.")
-async def get_graph_tool(context: Context) -> KnowledgeGraphResponse:
+async def get_graph_tool(context: Context) -> Dict:
     graph_data = await kg_async_service.get_knowledge_graph()
-    return KnowledgeGraphResponse(**graph_data)
+    return KnowledgeGraphResponse(**graph_data).model_dump()
 
 @app.tool(name="add_observation", description="Adds an observation to an entity.")
-async def add_observation_tool(context: Context, request: ObservationRequest) -> StandardResponse:
+async def add_observation_tool(context: Context, request: ObservationRequest) -> Dict:
     entity_path = Path(KG_MARKDOWN_BASE_PATH) / f"{request.entity_name}.md"
     if not entity_path.exists():
-        return StandardResponse(success=False, message=f"Entity '{request.entity_name}' not found.")
+        return StandardResponse(success=False, message=f"Entity '{request.entity_name}' not found.").model_dump()
     
     success = await kg_async_service.add_observation(request.entity_name, request.observation)
     if success:
-        return StandardResponse(success=True, message=f"Observation added to '{request.entity_name}'.")
-    return StandardResponse(success=False, message=f"Failed to add observation to '{request.entity_name}'.")
+        return StandardResponse(success=True, message=f"Observation added to '{request.entity_name}'.").model_dump()
+    return StandardResponse(success=False, message=f"Failed to add observation to '{request.entity_name}'.").model_dump()
 
 @app.tool(name="add_relationship", description="Adds a relationship between entities.")
-async def add_relationship_tool(context: Context, request: RelationshipRequest) -> StandardResponse:
+async def add_relationship_tool(context: Context, request: RelationshipRequest) -> Dict:
     if not (Path(KG_MARKDOWN_BASE_PATH) / f"{request.source_entity_name}.md").exists():
-        return StandardResponse(success=False, message=f"Source entity '{request.source_entity_name}' not found.")
+        return StandardResponse(success=False, message=f"Source entity '{request.source_entity_name}' not found.").model_dump()
     if not (Path(KG_MARKDOWN_BASE_PATH) / f"{request.target_entity}.md").exists():
-        return StandardResponse(success=False, message=f"Target entity '{request.target_entity}' not found.")
+        return StandardResponse(success=False, message=f"Target entity '{request.target_entity}' not found.").model_dump()
 
     success = await kg_async_service.add_relationship(
         request.source_entity_name, request.verb_preposition, request.target_entity, request.context
     )
     if success:
-        return StandardResponse(success=True, message=f"Relationship added from '{request.source_entity_name}' to '{request.target_entity}'.")
-    return StandardResponse(success=False, message="Failed to add relationship.")
+        return StandardResponse(success=True, message=f"Relationship added from '{request.source_entity_name}' to '{request.target_entity}'.").model_dump()
+    return StandardResponse(success=False, message="Failed to add relationship.").model_dump()
 
 @app.tool(name="delete_entity", description="Deletes an entity and its relationships.")
-async def delete_entity_tool(context: Context, request: DeleteEntityRequest) -> StandardResponse:
+async def delete_entity_tool(context: Context, request: DeleteEntityRequest) -> Dict:
     entity_path = Path(KG_MARKDOWN_BASE_PATH) / f"{request.name}.md"
     if not entity_path.exists():
-        return StandardResponse(success=False, message=f"Entity '{request.name}' not found for deletion.")
+        return StandardResponse(success=False, message=f"Entity '{request.name}' not found for deletion.").model_dump()
 
     success = await kg_async_service.delete_entity(name=request.name)
     if success:
-        return StandardResponse(success=True, message=f"Entity '{request.name}' and its relationships deleted successfully.")
+        return StandardResponse(success=True, message=f"Entity '{request.name}' and its relationships deleted successfully.").model_dump()
     else:
-        return StandardResponse(success=False, message=f"Failed to delete entity '{request.name}'.")
+        return StandardResponse(success=False, message=f"Failed to delete entity '{request.name}'.").model_dump()
 
 @app.tool(name="delete_observation", description="Deletes a specific observation from an entity.")
-async def delete_observation_tool(context: Context, request: DeleteObservationRequest) -> StandardResponse:
+async def delete_observation_tool(context: Context, request: DeleteObservationRequest) -> Dict:
     entity_path = Path(KG_MARKDOWN_BASE_PATH) / f"{request.entity_name}.md"
     if not entity_path.exists():
-        return StandardResponse(success=False, message=f"Entity '{request.entity_name}' not found.")
+        return StandardResponse(success=False, message=f"Entity '{request.entity_name}' not found.").model_dump()
 
     success = await kg_async_service.delete_observation(request.entity_name, request.observation)
     if success:
-        return StandardResponse(success=True, message=f"Observation deleted successfully from '{request.entity_name}'.")
+        return StandardResponse(success=True, message=f"Observation deleted successfully from '{request.entity_name}'.").model_dump()
     else:
-        return StandardResponse(success=False, message=f"Failed to delete observation from '{request.entity_name}'. It might not exist or an error occurred.")
+        return StandardResponse(success=False, message=f"Failed to delete observation from '{request.entity_name}'. It might not exist or an error occurred.").model_dump()
 
 @app.tool(name="delete_relationship", description="Deletes a specific relationship from an entity.")
-async def delete_relationship_tool(context: Context, request: DeleteRelationshipRequest) -> StandardResponse:
+async def delete_relationship_tool(context: Context, request: DeleteRelationshipRequest) -> Dict:
     source_entity_path = Path(KG_MARKDOWN_BASE_PATH) / f"{request.source_entity_name}.md"
     if not source_entity_path.exists():
-        return StandardResponse(success=False, message=f"Source entity '{request.source_entity_name}' not found.")
+        return StandardResponse(success=False, message=f"Source entity '{request.source_entity_name}' not found.").model_dump()
 
     success = await kg_async_service.delete_relationship(
         request.source_entity_name,
@@ -157,9 +157,9 @@ async def delete_relationship_tool(context: Context, request: DeleteRelationship
         request.context
     )
     if success:
-        return StandardResponse(success=True, message=f"Relationship deleted successfully from '{request.source_entity_name}'.")
+        return StandardResponse(success=True, message=f"Relationship deleted successfully from '{request.source_entity_name}'.").model_dump()
     else:
-        return StandardResponse(success=False, message=f"Failed to delete relationship from '{request.source_entity_name}'. It might not exist with the exact details provided.")
+        return StandardResponse(success=False, message=f"Failed to delete relationship from '{request.source_entity_name}'. It might not exist with the exact details provided.").model_dump()
 
 # All CRUD tools defined.
 
