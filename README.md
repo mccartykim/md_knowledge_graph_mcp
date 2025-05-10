@@ -93,3 +93,11 @@ python -m unittest discover tests
 *   `pydantic` (version used during development: >=2.0.0)
 
 These should be listed in a `pyproject.toml` if this server is maintained as a separate project.
+
+## Examples
+
+The `examples/` directory contains resources to help you get started:
+
+* `system_prompt.md` - A sample system prompt for LLMs interacting with this knowledge graph system, designed for long-context models that can reload the knowledge graph as needed.
+* `sample_kg_entry.md` - An example entity entry showing the expected markdown format.
+* `mcp_server_guide.md` - Comprehensive guide for integrating this MCP server with various LLM agents and clients, including configuration examples for Claude Desktop, Goose, Continue, and others. Includes best practices for agent memory management.

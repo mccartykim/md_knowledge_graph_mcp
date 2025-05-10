@@ -48,7 +48,7 @@ class DeleteRelationshipRequest(BaseModel):
     context: Optional[str] = Field(default="", description="Context of the relationship (must match exactly).")
 
 # --- Knowledge Graph Logic ---
-KG_MARKDOWN_BASE_PATH = os.getenv("KG_MCP_MARKDOWN_PATH", "kg_markdown_data")
+KG_MARKDOWN_BASE_PATH = os.getenv("MD_NOTEBOOK_KNOWLEDGE_GRAPH_DIR", os.getenv("KG_MCP_MARKDOWN_PATH", "kg_markdown_data"))
 os.makedirs(KG_MARKDOWN_BASE_PATH, exist_ok=True)
 
 class AsyncKnowledgeGraphService:
