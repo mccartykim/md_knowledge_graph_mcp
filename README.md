@@ -47,12 +47,12 @@ This server is designed to be run using the FastMCP command-line interface.
 
     Option A (if running from the parent directory of `extensions`):
     ```bash
-    uvx fastmcp run extensions.knowledge_graph_mcp.server:mcp_app --transport stdio
+    uvx fastmcp run server.py
     ```
 
     Option B (if `fastmcp run` can take a direct file path and you are inside the `knowledge_graph_mcp` directory):
     ```bash
-    uvx fastmcp run server.py --transport stdio 
+    uvx fastmcp run server.py
     ```
     *(Consult FastMCP documentation for the exact syntax of `fastmcp run` regarding file paths vs module paths.)*
 
