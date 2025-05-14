@@ -196,7 +196,7 @@ class MarkdownKnowledgeGraph:
             
         with open(file_path, 'w') as f:
             for line in lines:
-                if line.strip() == relationship_line.strip():
+                if line.strip() == relationship_line.strip() and not found_relationship:
                     found_relationship = True
                     continue
                 f.write(line)
@@ -215,7 +215,7 @@ class MarkdownKnowledgeGraph:
             
         with open(file_path, 'w') as f:
             for line in lines:
-                if line.strip() == observation.strip():
+                if line.strip() == observation.strip() and not found_observation:
                     found_observation = True
                     continue
                 f.write(line)
