@@ -10,9 +10,10 @@ import os
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from kg_core import MarkdownKnowledgeGraph
+# Removed imports for EntityNameRequest, ObservationRequest, RelationshipRequest
 from server import (
-    EntityNameRequest, ObservationRequest, StandardResponse,
-    KnowledgeGraphResponse, RelationshipRequest
+    StandardResponse,
+    KnowledgeGraphResponse
 )
 
 class TestJSONHandling:
@@ -61,51 +62,11 @@ class TestJSONHandling:
         except json.JSONDecodeError as e:
             pytest.fail(f"Failed to serialize graph to valid JSON: {e}")
     
-    def test_model_serialization(self):
-        """Test that Pydantic models properly serialize to JSON."""
-        # Create a relationship
-        self.kg.newEntity("General Store")
-        self.kg.newRelationship(
-            "Colonial Williamsburg", 
-            "contains", 
-            "General Store", 
-            "which sells period-appropriate goods"
-        )
-        
-        # Test that entity request serializes correctly
-        entity_req = EntityNameRequest(entity_name="Test Entity")
-        entity_json = entity_req.model_dump_json()
-        assert json.loads(entity_json)["entity_name"] == "Test Entity"
-        
-        # Test that observation request serializes correctly
-        obs_req = ObservationRequest(
-            entity_name="Colonial Williamsburg",
-            observation_text="New observation about JSON"
-        )
-        obs_json = obs_req.model_dump_json()
-        parsed_obs = json.loads(obs_json)
-        assert parsed_obs["entity_name"] == "Colonial Williamsburg"
-        assert parsed_obs["observation_text"] == "New observation about JSON"
-        
-        # Test that relationship request serializes correctly
-        rel_req = RelationshipRequest(
-            from_entity="Colonial Williamsburg",
-            relationship_type="has",
-            to_entity="General Store",
-            details="with historical items"
-        )
-        rel_json = rel_req.model_dump_json()
-        parsed_rel = json.loads(rel_json)
-        assert parsed_rel["from_entity"] == "Colonial Williamsburg"
-        assert parsed_rel["relationship_type"] == "has"
-        
-        # Test graph response serialization
-        graph = self.kg.getKnowledgeGraph()
-        response = KnowledgeGraphResponse(**graph)
-        response_json = response.model_dump_json()
-        parsed_response = json.loads(response_json)
-        assert "entities" in parsed_response
-        assert "relationships" in parsed_response
+    # Removed test_model_serialization as the request models were removed
+    # def test_model_serialization(self):
+    #     """Test that Pydantic models properly serialize to JSON."""
+    #     ...
+
     
     def test_standard_response_with_complex_data(self):
         """Test StandardResponse with complex nested data."""

@@ -13,14 +13,9 @@ from fastmcp import Client, FastMCP
 # Add parent directory (new project root) to sys.path for direct import of server and kg_core
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from server import ( # Now direct
+from server import (
     app,
-    EntityNameRequest,
-    ObservationRequest,
-    RelationshipRequest,
-    DeleteEntityRequest,
-    DeleteObservationRequest,
-    DeleteRelationshipRequest,
+    # Removed imports for request Pydantic models
     StandardResponse,
     KnowledgeGraphResponse,
 )
@@ -89,8 +84,8 @@ class TestMCPServerTools(unittest.IsolatedAsyncioTestCase):
 
     async def test_create_entity_tool(self):
         entity_name = "ToolTestEntity"
-        payload = EntityNameRequest(entity_name=entity_name)
-        raw_response = await self.client.call_tool("create_entity", {"request": payload.model_dump()})
+        # Calling tool with parameters in a dictionary
+        raw_response = await self.client.call_tool("create_entity", {"entity_name": entity_name})
         
         self.assertIsInstance(raw_response, list)
         self.assertEqual(len(raw_response), 1)
@@ -102,8 +97,10 @@ class TestMCPServerTools(unittest.IsolatedAsyncioTestCase):
 
     async def test_create_existing_entity_tool_fails(self):
         entity_name = "ToolTestEntityExists"
-        await self.client.call_tool("create_entity", {"request": EntityNameRequest(entity_name=entity_name).model_dump()})
-        raw_response = await self.client.call_tool("create_entity", {"request": EntityNameRequest(entity_name=entity_name).model_dump()})
+        # Create first entity with parameters in a dictionary
+        await self.client.call_tool("create_entity", {"entity_name": entity_name})
+        # Attempt to create again with parameters in a dictionary
+        raw_response = await self.client.call_tool("create_entity", {"entity_name": entity_name})
         self.assertIsInstance(raw_response, list)
         self.assertEqual(len(raw_response), 1)
         response = parse_tool_response(raw_response, StandardResponse)
@@ -111,7 +108,7 @@ class TestMCPServerTools(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(response.message, f"Entity '{entity_name}' already exists.")
 
     async def test_get_graph_tool_empty(self):
-        raw_response = await self.client.call_tool("get_graph", {}) # This tool takes no arguments like 'request'
+        raw_response = await self.client.call_tool("get_graph", {}) # This tool takes no arguments, pass empty dictionary
         self.assertIsInstance(raw_response, list)
         self.assertEqual(len(raw_response), 1)
         
@@ -121,8 +118,9 @@ class TestMCPServerTools(unittest.IsolatedAsyncioTestCase):
 
     async def test_get_graph_tool__with_data(self):
         entity_name = "GraphDataEntity"
-        await self.client.call_tool("create_entity", {"request": EntityNameRequest(entity_name=entity_name).model_dump()})
-        raw_response = await self.client.call_tool("get_graph", {}) # This tool takes no arguments like 'request'
+        # Create entity with parameters in a dictionary
+        await self.client.call_tool("create_entity", {"entity_name": entity_name})
+        raw_response = await self.client.call_tool("get_graph", {}) # This tool takes no arguments, pass empty dictionary
         self.assertIsInstance(raw_response, list)
         self.assertEqual(len(raw_response), 1)
         response = parse_tool_response(raw_response, KnowledgeGraphResponse)
@@ -131,12 +129,11 @@ class TestMCPServerTools(unittest.IsolatedAsyncioTestCase):
     async def test_add_observation_tool(self):
         entity_name = "ObsToolEntity"
         observation_text = "This is a test observation via tool."
-        # Ensure the entity is created using the correct payload structure
-        await self.client.call_tool("create_entity", {"request": EntityNameRequest(entity_name=entity_name).model_dump()})
+        # Ensure the entity is created
+        await self.client.call_tool("create_entity", {"entity_name": entity_name})
 
-        payload = ObservationRequest(entity_name=entity_name, observation_text=observation_text)
-        
-        raw_response = await self.client.call_tool("add_observation", {"request": payload.model_dump()})
+        # Add observation with parameters in a dictionary
+        raw_response = await self.client.call_tool("add_observation", {"entity_name": entity_name, "observation_text": observation_text})
         
         self.assertIsInstance(raw_response, list)
         self.assertEqual(len(raw_response), 1)
@@ -153,17 +150,20 @@ class TestMCPServerTools(unittest.IsolatedAsyncioTestCase):
         verb = "connects to"
         context_text = "via a test relationship"
 
-        # Ensure entities are created using the correct payload structure
-        await self.client.call_tool("create_entity", {"request": EntityNameRequest(entity_name=source_entity).model_dump()})
-        await self.client.call_tool("create_entity", {"request": EntityNameRequest(entity_name=target_entity).model_dump()})
+        # Ensure entities are created
+        await self.client.call_tool("create_entity", {"entity_name": source_entity})
+        await self.client.call_tool("create_entity", {"entity_name": target_entity})
 
-        payload = RelationshipRequest(
-            from_entity=source_entity,
-            relationship_type=verb,
-            to_entity=target_entity,
-            details=context_text
+        # Add relationship with parameters in a dictionary
+        raw_response = await self.client.call_tool(
+            "add_relationship", 
+            {
+                "from_entity": source_entity,
+                "relationship_type": verb,
+                "to_entity": target_entity,
+                "details": context_text
+            }
         )
-        raw_response = await self.client.call_tool("add_relationship", {"request": payload.model_dump()})
         
         self.assertIsInstance(raw_response, list)
         self.assertEqual(len(raw_response), 1)
@@ -172,18 +172,20 @@ class TestMCPServerTools(unittest.IsolatedAsyncioTestCase):
 
         with open(Path(self.test_dir) / f"{source_entity}.md", 'r') as f:
             content = f.read()
+        # Adjusted assertion to match potential formatting in MarkdownKnowledgeGraph
+        # Assuming it adds the details after the link
         self.assertIn(f"- {verb} [[{target_entity}]] {context_text}", content)
     
     async def test_delete_entity_tool_success(self):
         entity_name = "EntityToDeleteViaTool"
         
-        create_payload = EntityNameRequest(entity_name=entity_name)
-        await self.client.call_tool("create_entity", {"request": create_payload.model_dump()})
+        # Create entity with parameters in a dictionary
+        await self.client.call_tool("create_entity", {"entity_name": entity_name})
         
         self.assertTrue((Path(self.test_dir) / f"{entity_name}.md").exists(), "Entity was not created for delete test")
 
-        delete_payload = DeleteEntityRequest(entity_name=entity_name)
-        raw_response = await self.client.call_tool("delete_entity", {"request": delete_payload.model_dump()})
+        # Delete entity with parameters in a dictionary
+        raw_response = await self.client.call_tool("delete_entity", {"entity_name": entity_name})
 
         self.assertIsInstance(raw_response, list)
         self.assertEqual(len(raw_response), 1)
@@ -197,8 +199,8 @@ class TestMCPServerTools(unittest.IsolatedAsyncioTestCase):
     async def test_delete_entity_tool_not_found(self):
         entity_name = "NonExistentForDelete"
         
-        delete_payload = DeleteEntityRequest(entity_name=entity_name)
-        raw_response = await self.client.call_tool("delete_entity", {"request": delete_payload.model_dump()})
+        # Delete non-existent entity with parameters in a dictionary
+        raw_response = await self.client.call_tool("delete_entity", {"entity_name": entity_name})
 
         self.assertIsInstance(raw_response, list)
         self.assertEqual(len(raw_response), 1)
@@ -212,15 +214,14 @@ class TestMCPServerTools(unittest.IsolatedAsyncioTestCase):
         obs_to_keep = "This observation stays."
         obs_to_delete = "This observation will be deleted."
 
-        # Ensure the entity is created using the correct payload structure
-        await self.client.call_tool("create_entity", {"request": EntityNameRequest(entity_name=entity_name).model_dump()})
-        obs_payload1 = ObservationRequest(entity_name=entity_name, observation_text=obs_to_keep)
-        await self.client.call_tool("add_observation", {"request": obs_payload1.model_dump()})
-        obs_payload2 = ObservationRequest(entity_name=entity_name, observation_text=obs_to_delete)
-        await self.client.call_tool("add_observation", {"request": obs_payload2.model_dump()})
+        # Ensure the entity is created
+        await self.client.call_tool("create_entity", {"entity_name": entity_name})
+        # Add observations with parameters in a dictionary
+        await self.client.call_tool("add_observation", {"entity_name": entity_name, "observation_text": obs_to_keep})
+        await self.client.call_tool("add_observation", {"entity_name": entity_name, "observation_text": obs_to_delete})
 
-        delete_obs_payload = DeleteObservationRequest(entity_name=entity_name, observation_text=obs_to_delete)
-        raw_response = await self.client.call_tool("delete_observation", {"request": delete_obs_payload.model_dump()})
+        # Delete observation with parameters in a dictionary
+        raw_response = await self.client.call_tool("delete_observation", {"entity_name": entity_name, "observation_text": obs_to_delete})
         
         self.assertIsInstance(raw_response, list)
         response = parse_tool_response(raw_response, StandardResponse)
@@ -232,19 +233,19 @@ class TestMCPServerTools(unittest.IsolatedAsyncioTestCase):
         self.assertIn(obs_to_keep, content)
 
     async def test_delete_observation_tool_entity_not_found(self):
-        payload = DeleteObservationRequest(entity_name="NonExistentEntityObs", observation_text="Any obs")
-        raw_response = await self.client.call_tool("delete_observation", {"request": payload.model_dump()})
+        # Attempt to delete observation for non-existent entity with parameters in a dictionary
+        raw_response = await self.client.call_tool("delete_observation", {"entity_name": "NonExistentEntityObs", "observation_text": "Any obs"})
         response = parse_tool_response(raw_response, StandardResponse)
         self.assertFalse(response.success)
         self.assertEqual(response.message, "Entity 'NonExistentEntityObs' not found.")
         
     async def test_delete_observation_tool_obs_not_found(self):
         entity_name = "EntityObsNotFound"
-        # Ensure the entity is created using the correct payload structure
-        await self.client.call_tool("create_entity", {"request": EntityNameRequest(entity_name=entity_name).model_dump()})
+        # Ensure the entity is created
+        await self.client.call_tool("create_entity", {"entity_name": entity_name})
         
-        payload = DeleteObservationRequest(entity_name=entity_name, observation_text="This observation does not exist.")
-        raw_response = await self.client.call_tool("delete_observation", {"request": payload.model_dump()})
+        # Attempt to delete non-existent observation with parameters in a dictionary
+        raw_response = await self.client.call_tool("delete_observation", {"entity_name": entity_name, "observation_text": "This observation does not exist."})
         response = parse_tool_response(raw_response, StandardResponse)
         self.assertFalse(response.success)
         self.assertIn("Failed to delete observation", response.message)
@@ -255,29 +256,36 @@ class TestMCPServerTools(unittest.IsolatedAsyncioTestCase):
         verb = "to be deleted"
         ctx = "exact context"
         
-        # Ensure entities are created using the correct payload structure
-        await self.client.call_tool("create_entity", {"request": EntityNameRequest(entity_name=src).model_dump()})
-        await self.client.call_tool("create_entity", {"request": EntityNameRequest(entity_name=tgt).model_dump()})
-        rel_payload = RelationshipRequest(from_entity=src, relationship_type=verb, to_entity=tgt, details=ctx)
-        await self.client.call_tool("add_relationship", {"request": rel_payload.model_dump()})
-        rel_payload_keep = RelationshipRequest(from_entity=src, relationship_type="to keep", to_entity=tgt, details="different")
-        await self.client.call_tool("add_relationship", {"request": rel_payload_keep.model_dump()})
+        # Ensure entities are created
+        await self.client.call_tool("create_entity", {"entity_name": src})
+        await self.client.call_tool("create_entity", {"entity_name": tgt})
+        # Add relationships with parameters in a dictionary
+        await self.client.call_tool("add_relationship", {"from_entity": src, "relationship_type": verb, "to_entity": tgt, "details": ctx})
+        await self.client.call_tool("add_relationship", {"from_entity": src, "relationship_type": "to keep", "to_entity": tgt, "details": "different"})
 
-        del_rel_payload = DeleteRelationshipRequest(
-            from_entity=src, relationship_type=verb, to_entity=tgt, details=ctx
+        # Delete relationship with parameters in a dictionary
+        raw_response = await self.client.call_tool(
+            "delete_relationship",
+            {
+                "from_entity": src,
+                "relationship_type": verb,
+                "to_entity": tgt,
+                "details": ctx
+            }
         )
-        raw_response = await self.client.call_tool("delete_relationship", {"request": del_rel_payload.model_dump()})
         response = parse_tool_response(raw_response, StandardResponse)
         self.assertTrue(response.success, response.message)
 
         with open(Path(self.test_dir) / f"{src}.md", 'r') as f:
             content = f.read()
+        # Adjusted assertion to match potential formatting in MarkdownKnowledgeGraph
+        # Assuming it adds the details after the link
         self.assertNotIn(f"- {verb} [[{tgt}]] {ctx}", content)
         self.assertIn(f"- to keep [[{tgt}]] different", content)
 
     async def test_delete_relationship_tool_source_not_found(self):
-        payload = DeleteRelationshipRequest(from_entity="NonExistentSourceRel", relationship_type="v", to_entity="t", details="c")
-        raw_response = await self.client.call_tool("delete_relationship", {"request": payload.model_dump()})
+        # Attempt to delete relationship for non-existent source with parameters in a dictionary
+        raw_response = await self.client.call_tool("delete_relationship", {"from_entity": "NonExistentSourceRel", "relationship_type": "v", "to_entity": "t", "details": "c"})
         response = parse_tool_response(raw_response, StandardResponse)
         self.assertFalse(response.success)
         self.assertEqual(response.message, "Source entity 'NonExistentSourceRel' not found.")
@@ -285,14 +293,20 @@ class TestMCPServerTools(unittest.IsolatedAsyncioTestCase):
     async def test_delete_relationship_tool_rel_not_found(self):
         src = "RelNotFoundSrc"
         tgt = "RelNotFoundTgt"
-        # Ensure entities are created using the correct payload structure
-        await self.client.call_tool("create_entity", {"request": EntityNameRequest(entity_name=src).model_dump()})
-        await self.client.call_tool("create_entity", {"request": EntityNameRequest(entity_name=tgt).model_dump()})
+        # Ensure entities are created
+        await self.client.call_tool("create_entity", {"entity_name": src})
+        await self.client.call_tool("create_entity", {"entity_name": tgt})
 
-        payload = DeleteRelationshipRequest(
-            from_entity=src, relationship_type="non-existent verb", to_entity=tgt, details="no match"
+        # Attempt to delete non-existent relationship with parameters in a dictionary
+        raw_response = await self.client.call_tool(
+            "delete_relationship", 
+            {
+                "from_entity": src,
+                "relationship_type": "non-existent verb",
+                "to_entity": tgt,
+                "details": "no match"
+            }
         )
-        raw_response = await self.client.call_tool("delete_relationship", {"request": payload.model_dump()})
         response = parse_tool_response(raw_response, StandardResponse)
         self.assertFalse(response.success)
         self.assertIn("Failed to delete relationship", response.message)
