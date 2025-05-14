@@ -1,25 +1,32 @@
 [project]
-name = "pocketflow-template-python"
+name = "knowledge_graph_md_mcp_server"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
-  "pocketflow>=0.0.2",
-  "fastmcp>=2.0.0",
-  "pydantic>=2.0.0",
-  "pytest>=8.3.5",
+    "pocketflow>=0.0.2",
+    "fastmcp>=2.0.0",
+    "pydantic>=2.0.0",
+    "pytest>=8.3.5",
 ]
 
 [project.optional-dependencies]
-test = [
-  "pytest>=8.0.0"
+# Based on the JSON output, there seems to be a single
+# optional dependency group containing pytest and a commented out uvicorn.
+# I'll name the group 'dev' as a common convention.
+dev = [
+    "pytest>=8.0.0",
+    # "uvicorn[standard]>=0.20.0",
 ]
 
-# The following comments were present in the original file
-# (the line '# [project.optional-dependencies]' which previously existed
-# has been replaced by the active section above):
-# Optional If you want to run this server with uvicorn
-# dev = [
-#   "uvicorn[standard]>=0.20.0",
-# ]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project.scripts]
+server = "server:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["kg_core.py", "server.py", "__init__.py"]

@@ -1,74 +1,77 @@
 {
-  description = "Knowledge Graph MCP Server";
+  description = "Honk MCP Server to give LLMs a voice on MacOS";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    nixpkgs.url = "github:nixos/nixpkgs?ref=nixos-unstable";
     pyproject-nix = {
-      url = "github:pyproject-nix/pyproject.nix";
+      url = "github:nix-community/pyproject.nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     uv2nix = {
-      url = "github:pyproject-nix/uv2nix";
+      url = "github:adisbladis/uv2nix";
       inputs.pyproject-nix.follows = "pyproject-nix";
       inputs.nixpkgs.follows = "nixpkgs";
+    };
+    pyproject-build-systems = {
+      url = "github:pyproject-nix/build-system-pkgs";
+      inputs = {
+        pyproject-nix.follows = "pyproject-nix";
+        uv2nix.follows = "uv2nix";
+        nixpkgs.follows = "nixpkgs";
+      };
     };
   };
 
   outputs = {
     self,
+    systems,
     nixpkgs,
-    uv2nix,
     pyproject-nix,
+    uv2nix,
+    pyproject-build-systems,
     ...
-  }:
-  let
-    pkgs = nixpkgs.legacyPackages.x86_64-linux;
-    python = pkgs.python312; # Or another suitable Python version
-    # Load a uv workspace from a workspace root.
-    # Uv2nix treats all uv projects as workspace projects.
-    workspace = uv2nix.lib.workspace.loadWorkspace { workspaceRoot = ./.; };
-    mkVenv = pyproject-nix.build.packages {
-      inherit python;
-    };
-    # Create package overlay from workspace.
-    overlay = workspace.mkPyprojectOverlay {};
-    pythonSet = mkVenv.overrideScope
-    (
-      lib.composeManyExtensions [
-        overlay
-      ]
-    );
-  in
-  {
-    # Build the server into a virtual environment.
-    packages.x86_64-linux.default = pythonSet.mkVirtualEnv "knowledge-graph-server-env" workspace.deps.default;
+  }: let
+    forEachSystem = nixpkgs.lib.genAttrs (import systems);
+    pkgsFor = forEachSystem (system: import nixpkgs {inherit system;});
 
-    # Run the server with `nix run`.
-    apps.x86_64-linux = {
+    inherit (nixpkgs) lib;
+
+    workspace = uv2nix.lib.workspace.loadWorkspace {workspaceRoot = ./.;};
+
+    overlay = workspace.mkPyprojectOverlay {
+      sourcePreference = "wheel"; # or sourcePreference = "sdist";
+    };
+
+    pyprojectOverrides = _final: _prev: {
+    };
+
+    python = forEachSystem (system: pkgsFor.${system}.python313);
+
+    pythonSets = forEachSystem (
+      system:
+        (pkgsFor.${system}.callPackage pyproject-nix.build.packages {
+          python = python.${system};
+        })
+        .overrideScope
+        (lib.composeManyExtensions
+          [
+            pyproject-build-systems.overlays.default
+            overlay
+            pyprojectOverrides
+          ])
+    );
+  in {
+    formatter = forEachSystem (system: pkgsFor.${system}.alejandra);
+
+    packages = forEachSystem (system: {
+      default = pythonSets.${system}.mkVirtualEnv "knowledge_graph_md_mcp_server" workspace.deps.default;
+    });
+
+    apps = forEachSystem (system: {
       default = {
         type = "app";
-        program = "${self.packages.x86_64-linux.default}/bin/uvx"; # Assuming that uvx is in the venv
-        args = [
-          "run"
-          "server.py"
-        ];
+        program = "${self.packages.${system}.default}/bin/server";
       };
-    };
-
-    devShells.x86_64-linux.default = pkgs.mkShell {
-      packages = [
-        python
-        pkgs.uv
-      ];
-      shellHook = ''
-        echo "Entering development shell for knowledge graph server."
-        echo "To run the server: nix run"
-        echo "To enter a shell: nix develop"
-        unset PYTHONPATH
-      '';
-
-      # prevent uv from managing python downloads
-      UV_PYTHON_DOWNLOADS = "never";
-    };
+    });
   };
 }

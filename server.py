@@ -172,3 +172,6 @@ async def delete_relationship_tool(context: Context, request: DeleteRelationship
 # uvx fastmcp run server.py --transport stdio
 #
 # Ensure 'fastmcp' is installed in your uv environment.
+
+def main():
+    app.run()
