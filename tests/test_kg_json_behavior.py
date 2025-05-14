@@ -73,31 +73,31 @@ class TestJSONHandling:
         )
         
         # Test that entity request serializes correctly
-        entity_req = EntityNameRequest(name="Test Entity")
+        entity_req = EntityNameRequest(entity_name="Test Entity")
         entity_json = entity_req.model_dump_json()
-        assert json.loads(entity_json)["name"] == "Test Entity"
+        assert json.loads(entity_json)["entity_name"] == "Test Entity"
         
         # Test that observation request serializes correctly
         obs_req = ObservationRequest(
             entity_name="Colonial Williamsburg",
-            observation="New observation about JSON"
+            observation_text="New observation about JSON"
         )
         obs_json = obs_req.model_dump_json()
         parsed_obs = json.loads(obs_json)
         assert parsed_obs["entity_name"] == "Colonial Williamsburg"
-        assert parsed_obs["observation"] == "New observation about JSON"
+        assert parsed_obs["observation_text"] == "New observation about JSON"
         
         # Test that relationship request serializes correctly
         rel_req = RelationshipRequest(
-            source_entity_name="Colonial Williamsburg",
-            verb_preposition="has",
-            target_entity="General Store",
-            context="with historical items"
+            from_entity="Colonial Williamsburg",
+            relationship_type="has",
+            to_entity="General Store",
+            details="with historical items"
         )
         rel_json = rel_req.model_dump_json()
         parsed_rel = json.loads(rel_json)
-        assert parsed_rel["source_entity_name"] == "Colonial Williamsburg"
-        assert parsed_rel["verb_preposition"] == "has"
+        assert parsed_rel["from_entity"] == "Colonial Williamsburg"
+        assert parsed_rel["relationship_type"] == "has"
         
         # Test graph response serialization
         graph = self.kg.getKnowledgeGraph()

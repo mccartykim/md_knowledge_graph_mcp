@@ -97,11 +97,16 @@ For optimal use of this memory system with agents:
    AGENT: Based on my memory, I recall that...
    ```
 
-3. **Double Bookkeeping**: When creating relationships, always create the reciprocal relationship:
+3. **Double Bookkeeping**: When creating relationships, always create reciprocal relationships in both directions:
    ```
-   If: Entity A "works with" Entity B
-   Then: Entity B should also "works with" Entity A
+   # First relationship (Person to Company)
+   {"from_entity": "JohnDoe", "relationship_type": "works at", "to_entity": "TechCorp", "details": "as engineer"}
+   
+   # Second relationship (Company to Person)
+   {"from_entity": "TechCorp", "relationship_type": "employs", "to_entity": "JohnDoe", "details": "as engineer"}
    ```
+   
+   This ensures bidirectional navigation and completeness of your knowledge graph.
 
 4. **Progressive Detail**: Start with basic entity information, then add detail over time as you learn more.
 
@@ -115,13 +120,13 @@ This sample system prompt section helps agents effectively use the Knowledge Gra
 You have access to a persistent knowledge graph memory system through MCP tools. This system stores information as markdown files with named entities and relationships between them.
 
 ## Available Memory Tools:
-- create_entity: Creates a new entity with a given name
-- add_observation: Adds factual information to an entity
-- add_relationship: Creates a relationship between two entities
-- get_graph: Retrieves the entire knowledge graph
-- delete_entity: Removes an entity and its relationships
-- delete_observation: Removes specific information from an entity
-- delete_relationship: Removes a relationship between entities
+- `create_entity`: Creates a new entity with a given name (field: `entity_name`)
+- `add_observation`: Adds factual information to an entity (fields: `entity_name`, `observation_text`)
+- `add_relationship`: Creates a relationship between two entities (fields: `from_entity`, `relationship_type`, `to_entity`, `details`)
+- `get_graph`: Retrieves the entire knowledge graph
+- `delete_entity`: Removes an entity and its relationships (field: `entity_name`)
+- `delete_observation`: Removes specific information from an entity (fields: `entity_name`, `observation_text`)
+- `delete_relationship`: Removes a relationship between entities (fields: `from_entity`, `relationship_type`, `to_entity`, `details`)
 
 ## When to Use Memory:
 - CREATE entities for important people, places, concepts, or things
