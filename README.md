@@ -1,6 +1,8 @@
 # Markdown Knowledge Graph Notebook MCP Server
 ## A simple and readable external memory system for AI tools
 
+<img width="1566" alt="image" src="https://github.com/user-attachments/assets/2b4bd84a-7308-43ef-b4f5-113fb5d3f290" />
+
 This project is a FastMCP-based server that provides tools to manage a simple "knowledge graph notebook" stored as Markdown files. Each entity in the knowledge graph is a separate Markdown file, and relationships are defined within these files.
 
 The intended usecase is for users to set up this tool to point to an empty Obsidian vault that humans can read and update on their own. With this workflow, a casual description can become a tidy and detailed structured graph, ideal for search and diagrams. 
