@@ -58,7 +58,7 @@ async def create_entity(context: Context, entity_name: str) -> Dict:
     """Creates a new entity with the given name.
     
     Args:
-        entity_name: The name of the entity to create. Use PascalCase (e.g., 'JohnDoe').
+        entity_name: The name of the entity to create
     
     Returns:
         A response indicating success or failure.
@@ -89,7 +89,7 @@ async def create_entities_batch(context: Context, entity_names: List[str]) -> Di
     """Creates multiple new entities in the knowledge graph in a single operation.
     
     Args:
-        entity_names: A list of entity names to create in PascalCase (e.g., ['JohnDoe', 'CompanyXYZ']).
+        entity_names: A list of entity names to create (e.g., ['John Doe', 'Company XYZ']).
     
     Returns:
         A response indicating success or failure for each entity.

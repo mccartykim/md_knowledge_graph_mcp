@@ -1,8 +1,11 @@
-# Knowledge Graph Notebook (MCP Server - STDIO)
+# Markdown Knowledge Graph Notebook MCP Server
+## A simple and readable external memory system for AI tools
 
 This project is a FastMCP-based server that provides tools to manage a simple "knowledge graph notebook" stored as Markdown files. Each entity in the knowledge graph is a separate Markdown file, and relationships are defined within these files.
 
-This server is designed to be run over STDIO, allowing communication with MCP clients (like Goose or other agents) that support this transport.
+The intended usecase is for users to set up this tool to point to an empty Obsidian vault that humans can read and update on their own. With this workflow, a casual description can become a tidy and detailed structured graph, ideal for search and diagrams. 
+
+This means your robot friend's memory is easy to review and fix, making the world outside their context something you can hold and touch. Add on version control, and you can roll back your bud's memory to before you said something weird, which is normal, cool, and also healthy behavior.
 
 ## Features
 
@@ -10,12 +13,6 @@ This server is designed to be run over STDIO, allowing communication with MCP cl
 *   **Observation Management:** Add, delete observations (textual notes) within an entity.
 *   **Relationship Management:** Add, delete relationships between entities.
 *   **Graph Retrieval:** Get a representation of the entire knowledge graph.
-
-## Core Components
-
-*   `kg_core.py`: Contains the `MarkdownKnowledgeGraph` class, which handles the direct logic of reading, writing, and parsing the Markdown files.
-*   `server.py`: Defines the FastMCP application (`mcp_app`), Pydantic models for requests/responses, and exposes the knowledge graph operations as MCP tools.
-*   `tests/`: Contains unit tests for `kg_core.py` and integration tests for the MCP tools in `server.py`.
 
 ## Tools Exposed
 
@@ -36,41 +33,44 @@ The server exposes the following MCP tools:
 *   `delete_relationship`: Deletes a relationship.
     *   Payload: `{"source_entity_name": "source", "verb_preposition": "verb", "target_entity": "target", "context": "exact_context"}`
 
-## Running the Server (STDIO)
+## Installation
+Right now, I'm invoking it with a nix flake because I'm a crazy person who loves nix. The happiest path will be for you to install nix with the Determinate Installer, and add the stdio invocation for `nix run github:mccartykim/md_knowledge_graph_mcp`. 
 
-This server is designed to be run using the FastMCP command-line interface.
+Claude/Windsurf config style:
 
-1.  **Ensure Dependencies:** Make sure `fastmcp` and `pydantic` are installed in your Python environment (e.g., via `uv pip install fastmcp pydantic` or from a `pyproject.toml` if this server is a separate package).
-
-2.  **Run using `fastmcp run`:**
-    The `fastmcp run` command is used to launch the server. You'll need to specify the path to the server module and the `mcp_app` instance, along with the desired transport. For STDIO:
-
-    Option A (if running from the parent directory of `extensions`):
-    ```bash
-    uvx fastmcp run server.py
-    ```
-
-    Option B (if `fastmcp run` can take a direct file path and you are inside the `knowledge_graph_mcp` directory):
-    ```bash
-    uvx fastmcp run server.py
-    ```
-    *(Consult FastMCP documentation for the exact syntax of `fastmcp run` regarding file paths vs module paths.)*
-
-    The server will then listen on `stdin` for JSON-RPC requests and send responses to `stdout`. Log messages (if any from FastMCP or your tools) might go to `stderr`.
-
-**Example Manual Invocation (using `fastmcp run`):**
-Assuming you are in the `knowledge_graph_mcp` directory and Option B works:
-```bash
-echo '{"jsonrpc": "2.0", "method": "create_entity", "params": {"name": "MyTestEntityFromSTDIO"}, "id": 1}' | uvx fastmcp run server.py --transport stdio
 ```
-Or using Option A (from parent of `extensions`):
-```bash
-echo '{"jsonrpc": "2.0", "method": "create_entity", "params": {"name": "MyTestEntityFromSTDIO"}, "id": 1}' | uvx fastmcp run extensions.knowledge_graph_mcp.server:mcp_app --transport stdio
+"mcp_servers" : { 
+  "md_knowledge_graph": {
+      "command": "nix",
+      "args": [
+        "run",
+        "github:mccartykim/md_knowledge_graph_mcp"
+      ],
+      "env" : {
+        "MD_NOTEBOOK_KNOWLEDGE_GRAPH_DIR": "/Users/your_name/personal/knowledge_graph"
+      }
+  }
+}
 ```
 
-## Storage
+This can also run via uv. Clone this repo and `uv run server`, I'm hoping to publish this soon on pypy for easier setup.
 
 The Markdown files for the knowledge graph are stored in a directory specified by the `KG_MCP_MARKDOWN_PATH` environment variable. If not set, it defaults to a local directory named `kg_markdown_data`.
+
+
+## Example entity:
+```
+# Pleiades
+
+Pleiades is Kimberly's cat, also called Plady for short
+
+Named after the Pleiades star system, which is also what Subaru is named after. Cat is short and rumbly like a Subaru car.
+
+## Relationships
+- named_after [[Subaru]] Pleiades (Plady) the cat was named after Kimberly's Subaru.
+```
+
+As you can see, we have the Name, Observations separated by newlines, and then a list of relationships in a `verb [[link]] maybe some context afterwards` type pattern.
 
 ## Testing
 
@@ -86,13 +86,6 @@ python -m unittest discover tests
 # Or if pytest is used:
 # pytest tests/
 ```
-
-## Dependencies
-
-*   `fastmcp` (version used during development: >=2.0.0)
-*   `pydantic` (version used during development: >=2.0.0)
-
-These should be listed in a `pyproject.toml` if this server is maintained as a separate project.
 
 ## Examples
 
